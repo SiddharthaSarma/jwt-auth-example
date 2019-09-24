@@ -1,4 +1,6 @@
 import { Resolver, Query, Mutation, Arg } from 'type-graphql';
+import { hash } from 'bcryptjs';
+import { User } from './entity/User';
 
 @Resolver()
 export class UserResolver {
@@ -6,11 +8,27 @@ export class UserResolver {
   hello() {
     return 'hi'
   }
-  @Mutation()
-  register(
+
+  @Query(() => [User])
+  users() {
+    return User.find();
+  }
+
+  @Mutation(() => Boolean)
+  async register(
     @Arg('email', () => String) email: string,
     @Arg('password', () => String) password: string,
   ) {
-    console.log(email, password);
+    try {
+      const hashedPwd = await hash(password, 12);
+      await User.insert({
+        email,
+        password: hashedPwd
+      })
+    } catch {
+      console.log('not saved');
+      return false;
+    }
+    return true;
   }
 }
